@@ -66,18 +66,23 @@ Analyze your OASIS report and extrapolate the next value for each history. What 
 const TEST_OASIS_REPORTS: {
   history: number[];
   nextValue: number;
+  // For part 2
+  prevValue: number;
 }[] = [
   {
     history: [0, 3, 6, 9, 12, 15],
     nextValue: 18,
+    prevValue: -3,
   },
   {
     history: [1, 3, 6, 10, 15, 21],
     nextValue: 28,
+    prevValue: 0,
   },
   {
     history: [10, 13, 16, 21, 30, 45],
     nextValue: 68,
+    prevValue: 5,
   },
 ];
 
@@ -176,4 +181,85 @@ rl.on("line", (rawLine) => {
 
 rl.on("close", () => {
   console.log("sum", sumOfSums);
+});
+
+/* --- Part Two ---
+Of course, it would be nice to have even more history included in your report. Surely it's safe to just extrapolate backwards as well, right?
+
+For each history, repeat the process of finding differences until the sequence of differences is entirely zero. Then, rather than adding a zero to the end and filling in the next values of each previous sequence, you should instead add a zero to the beginning of your sequence of zeroes, then fill in new first values for each previous sequence.
+
+In particular, here is what the third example history looks like when extrapolating back in time:
+
+5  10  13  16  21  30  45
+  5   3   3   5   9  15
+   -2   0   2   4   6
+      2   2   2   2
+        0   0   0
+Adding the new values on the left side of each sequence from bottom to top eventually reveals the new left-most history value: 5.
+
+Doing this for the remaining example data above results in previous values of -3 for the first history and 0 for the second history. Adding all three new values together produces 2.
+
+Analyze your OASIS report again, this time extrapolating the previous value for each history. What is the sum of these extrapolated values? */
+
+function extrapolatePrev(history: number[]): number {
+  // We need to look at each pair of numbers in the history and compute the difference
+  // between them, for as many levels as it takes to get to all zeros. We'll keep a list of all the sequences of differences.
+  const dLevels: number[][] = [history];
+  // Starting with our initial history, which is not all zeros...
+  let differences: number[] = history;
+  let allZeros = false;
+  while (!allZeros) {
+    // Get the sequence of differences for this list. The result of this will be used for
+    // the next level, if it's not all zeros, so we overwrite the differences array with
+    // the result.
+    [differences, allZeros] = getDifferences(differences);
+    // Push it to our list of all the levels.
+    dLevels.push(differences);
+  }
+
+  // Now we need to move backwards to extrapolate. Starting with the last level, subtract
+  // the first element of the previous level from the first element of that level, all the
+  // way back to the first level. For example, if the levels were:
+  // 10  13  16  21  30  45
+  //   3   3   5   9  15
+  //     0   2   4   6
+  //       2   2   2
+  //         0   0
+  // Then we would subtract...
+  // 2 - 0 = 2
+  //         0 - 2 = -2
+  //                  3 - (-2) = 5
+  //                            10 - 5 = 5
+  // In other words, the result of the subtraction at one level becomes the minuend for
+  // the subtraction at the previous level.
+  let nextMinuend = 0;
+  while (dLevels.length) {
+    // Shift the first element off of the last level and diff it with the first element of
+    // the previous level.
+    const subtrahend = dLevels.pop()!.shift()!;
+    nextMinuend = subtrahend - nextMinuend;
+  }
+
+  return nextMinuend;
+}
+
+// Test cases
+for (const { history, prevValue } of TEST_OASIS_REPORTS) {
+  const result = extrapolatePrev(history);
+  if (result !== prevValue) {
+    console.error("❌, expected", prevValue, "but got", result);
+  } else {
+    console.log("✅");
+  }
+}
+
+let sumOfMinuends = 0;
+rl.on("line", (rawLine) => {
+  // Parse an array of numbers from the line.
+  const line = rawLine.split(/\s+/).map((num) => parseInt(num, 10));
+  sumOfMinuends = sumOfMinuends + extrapolatePrev(line);
+});
+
+rl.on("close", () => {
+  console.log("sum 2", sumOfMinuends);
 });
