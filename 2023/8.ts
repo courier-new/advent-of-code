@@ -146,7 +146,7 @@ for (const { instructions, map, numberOfSteps } of TEST_MAP_CASES) {
 // Now try with the real map and instructions!
 import * as fs from "fs";
 
-fs.readFile("./advent-of-code-2023/8.txt", (err, rawFile) => {
+fs.readFile("./2023/8.txt", (err, rawFile) => {
   if (err) throw err;
   // We assume input is of the form:
   // - Instructions
@@ -388,7 +388,7 @@ if (testSteps2 !== 6) {
 }
 
 // Now try with the real map and instructions!
-fs.readFile("./advent-of-code-2023/8.txt", (err, rawFile) => {
+fs.readFile("./2023/8.txt", (err, rawFile) => {
   if (err) throw err;
   const [instructions, map] = rawFile.toString().split(/\n\n/);
   if (!instructions || !map) {

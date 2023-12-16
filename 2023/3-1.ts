@@ -233,7 +233,7 @@ import * as fs from "fs";
 
 // We'll read the whole file in for this since we want to look at multiple lines
 // simultaneously.
-fs.readFile("./advent-of-code-2023/3.txt", (err, rawFile) => {
+fs.readFile("./2023/3.txt", (err, rawFile) => {
   if (err) throw err;
   const [_, sum] = sumPartNumbers(rawFile.toString());
   console.log("result", sum);

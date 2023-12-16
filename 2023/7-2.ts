@@ -258,7 +258,7 @@ if (testSum !== 5905) {
 // Now try on our real document with every hand in our set.
 import * as fs from "fs";
 
-fs.readFile("./advent-of-code-2023/7.txt", (err, rawFile) => {
+fs.readFile("./2023/7.txt", (err, rawFile) => {
   if (err) throw err;
   const unorderedHands = rawFile.toString().split(/\n/);
   const hands = orderHands(unorderedHands);

@@ -353,7 +353,7 @@ import * as fs from "fs";
 
 // We'll read the whole file in for this since we need to parse sections multiple lines at
 // a time to build our converter functions.
-fs.readFile("./advent-of-code-2023/5.txt", (err, rawFile) => {
+fs.readFile("./2023/5.txt", (err, rawFile) => {
   if (err) throw err;
 
   const [initialSeeds, almanac] = parseAlmanac(rawFile.toString());

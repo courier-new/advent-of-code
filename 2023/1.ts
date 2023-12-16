@@ -56,7 +56,7 @@ import * as readline from "readline";
 import * as fs from "fs";
 
 const rl = readline.createInterface({
-  input: fs.createReadStream("./advent-of-code-2023/1.txt"),
+  input: fs.createReadStream("./2023/1.txt"),
 });
 
 // Keep track of the sum of all calibration values.
@@ -198,7 +198,7 @@ for (const [line, value] of CALIBRATION_TEST_CASES2) {
 
 // Now read from our actual calibration document again.
 const rl2 = readline.createInterface({
-  input: fs.createReadStream("./advent-of-code-2023/1.txt"),
+  input: fs.createReadStream("./2023/1.txt"),
 });
 
 // Keep track of the sum of all calibration values.

@@ -110,7 +110,7 @@ import * as fs from "fs";
 import * as readline from "readline";
 
 const rl = readline.createInterface({
-  input: fs.createReadStream("./advent-of-code-2023/4.txt"),
+  input: fs.createReadStream("./2023/4.txt"),
 });
 
 let sum = 0;
@@ -227,7 +227,7 @@ function recordCopies(card: string): void {
 }
 
 const rl2 = readline.createInterface({
-  input: fs.createReadStream("./advent-of-code-2023/4.txt"),
+  input: fs.createReadStream("./2023/4.txt"),
 });
 
 rl2.on("line", (line: string) => {

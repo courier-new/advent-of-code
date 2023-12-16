@@ -103,7 +103,7 @@ function sumGearRatios(schematic: string): [gearRatios: number[], sum: number] {
           // Now we need to capture the full part number for each of the 2 matches. It's
           // possible it's only a single character (e.g. "9") or a sequence of multiple
           // characters making up a single number (e.g. "918").
-          const partNumbers = [];
+          const partNumbers: number[] = [];
           for (const { index } of matchesAbove) {
             if (index !== undefined && previousLine !== undefined) {
               // index is relative to the 3-character long slice we looked at above the
@@ -255,7 +255,7 @@ import * as fs from "fs";
 
 // We'll read the whole file in for this since we want to look at multiple lines
 // simultaneously.
-fs.readFile("./advent-of-code-2023/3.txt", (err, rawFile) => {
+fs.readFile("./2023/3.txt", (err, rawFile) => {
   if (err) throw err;
   const [_, sum] = sumGearRatios(rawFile.toString());
   console.log("result", sum);

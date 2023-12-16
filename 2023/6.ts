@@ -88,7 +88,7 @@ for (const { time, recordDistance, possibleHolds } of TEST_RACES) {
 // Now look at our real data for the races
 import * as fs from "fs";
 
-fs.readFile("./advent-of-code-2023/6.txt", (err, rawFile) => {
+fs.readFile("./2023/6.txt", (err, rawFile) => {
   if (err) throw err;
 
   // Read out times and distances from our input. Times should be the first line,
@@ -151,7 +151,7 @@ Now, you have to figure out how many ways there are to win this single race. In 
 
 How many ways can you beat the record in this one much longer race? */
 
-fs.readFile("./advent-of-code-2023/6.txt", (err, rawFile) => {
+fs.readFile("./2023/6.txt", (err, rawFile) => {
   if (err) throw err;
 
   // Read out time and distance from our input. Time should be the first line,

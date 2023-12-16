@@ -291,7 +291,7 @@ console.log(findLowestLocation(TEST_ALMANAC));
 
 import * as fs from "fs";
 
-fs.readFile("./advent-of-code-2023/5.txt", (err, rawFile) => {
+fs.readFile("./2023/5.txt", (err, rawFile) => {
   if (err) throw err;
   console.log(findLowestLocation(rawFile.toString()));
 });

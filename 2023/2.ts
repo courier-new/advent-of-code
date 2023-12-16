@@ -141,7 +141,7 @@ import * as fs from "fs";
 
 // Now read from our actual calibration document again.
 const rl = readline.createInterface({
-  input: fs.createReadStream("./advent-of-code-2023/2.txt"),
+  input: fs.createReadStream("./2023/2.txt"),
 });
 
 // Keep track of the sum of all the game IDs.
@@ -309,7 +309,7 @@ for (const { game, minimumConfig, power } of CUBE_GAME_TEST_CASES_2) {
 
 // Now read from our actual input document again.
 const rl2 = readline.createInterface({
-  input: fs.createReadStream("./advent-of-code-2023/2.txt"),
+  input: fs.createReadStream("./2023/2.txt"),
 });
 
 // Keep track of the sum of all the game config powers.
