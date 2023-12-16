@@ -12,12 +12,6 @@ In the above example, the lowest location number can be obtained from seed numbe
 
 Consider all of the initial seed numbers listed in the ranges on the first line of the almanac. What is the lowest location number that corresponds to any of the initial seed numbers? */
 
-//TODO:
-// For part 2, initially I only tried to alter the initial seed parsing behavior, but the
-// ranges of seeds are just too big to check every possible seed individually and
-// ultimately we needed to revisit the whole approach to make it possible to eliminate
-// ranges at a time.
-
 const TEST_ALMANAC = `seeds: 79 14 55 13
 
 seed-to-soil map:

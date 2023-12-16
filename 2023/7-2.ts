@@ -37,7 +37,7 @@ function orderHands(hands: string[]): string[] {
   const hands1 = orderHands(hands.slice(0, midway));
   const hands2 = orderHands(hands.slice(midway));
   // Then merge the resultant lists.
-  let merged = [];
+  let merged: string[] = [];
   // While there are still elements in both lists...
   while (hands1.length && hands2.length) {
     const compare = compareHands(hands1[0]!, hands2[0]!);

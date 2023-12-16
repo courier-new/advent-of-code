@@ -268,7 +268,7 @@ function countSteps2(instructions: string, mapString: string): number {
 
   // For each node, individually trace it to the ending node and record the number of
   // steps it took to get there.
-  const stepsForNodes = [];
+  const stepsForNodes: number[] = [];
   for (const key of startingNodeKeys) {
     // stepCount also tracks which instruction index we're on. Once step count exceeds the
     // length of the instructions, we just take stepCount % instructions.length for the
