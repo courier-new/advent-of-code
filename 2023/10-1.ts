@@ -127,7 +127,7 @@ LJ.LJ`,
   },
 ];
 
-function findStart(maze: string[]): [row: number, column: number] {
+export function findStart(maze: string[]): [row: number, column: number] {
   let rowIndex = 0;
   // Iterate over every row
   while (rowIndex < maze.length) {
@@ -149,8 +149,8 @@ function findStart(maze: string[]): [row: number, column: number] {
   );
 }
 
-type Direction = "north" | "south" | "east" | "west";
-type Mover = {
+export type Direction = "north" | "south" | "east" | "west";
+export type Mover = {
   row: number;
   column: number;
   connectsTo: Direction;
@@ -221,7 +221,7 @@ function traceFarthestSteps(
 }
 
 // Helper function which returns the new row as a result of moving in a given direction.
-function moveRow(row: number, direction: Direction): number {
+export function moveRow(row: number, direction: Direction): number {
   return direction === "north"
     ? row - 1
     : direction === "south"
@@ -230,12 +230,12 @@ function moveRow(row: number, direction: Direction): number {
 }
 
 // Helper function which returns the new column as a result of moving in a given direction.
-function moveCol(col: number, direction: Direction): number {
+export function moveCol(col: number, direction: Direction): number {
   return direction === "west" ? col - 1 : direction === "east" ? col + 1 : col;
 }
 
 // Helper function which returns the opposite of a given direction.
-function flipDir(direction: Direction): Direction {
+export function flipDir(direction: Direction): Direction {
   switch (direction) {
     case "north":
       return "south";
@@ -250,7 +250,7 @@ function flipDir(direction: Direction): Direction {
 
 // Helper function which moves a `Mover` forward one step by following the direction the
 // last pipe `connectsTo`, updating the position, and updating the direction the next pipe `connectsTo`.
-function moveMover(maze: string[], mover: Mover): Mover {
+export function moveMover(maze: string[], mover: Mover): Mover {
   let { row, column, connectsTo } = mover;
   // Move the mover's coordinates to the next pipe.
   row = moveRow(row, connectsTo);
@@ -258,19 +258,19 @@ function moveMover(maze: string[], mover: Mover): Mover {
   // Find the next pipe.
   const nextPipe = maze[row]?.[column];
   if (!nextPipe) {
-    throw new Error(`mover 1 moved out of bounds: [${row}, ${column}]`);
+    throw new Error(`mover moved out of bounds: [${row}, ${column}]`);
   }
   // Check where it connects to. To know which direction we came from, flip the
   // direction we just moved.
   const nextConnectsTo = pipeLeadsTo(flipDir(connectsTo), nextPipe);
   if (!nextConnectsTo) {
     throw new Error(
-      `mover 1 could not find a connecting pipe from ${flipDir(
+      `mover could not find a connecting pipe from ${flipDir(
         connectsTo
       )}: [${row}, ${column}]`
     );
   }
-  // Return the updated mover
+  // Return the updated mover.
   return {
     row,
     column,
@@ -281,7 +281,7 @@ function moveMover(maze: string[], mover: Mover): Mover {
 // Helper function which takes a direction of origin and a pipe character and returns the
 // direction that the pipe leads to, or `null` if there is no pipe or the pipe does not
 // connect to the origin.
-function pipeLeadsTo(
+export function pipeLeadsTo(
   from: Direction,
   pipe: string | undefined
 ): Direction | null {
@@ -348,5 +348,5 @@ fs.readFile("./2023/10.txt", (err, rawFile) => {
   const maze = rawFile.toString().split(/\n/);
   const start = findStart(maze);
   const steps = traceFarthestSteps(maze, start);
-  console.log(steps);
+  console.log("steps", steps);
 });
