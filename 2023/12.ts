@@ -68,31 +68,82 @@ Adding all of the possible arrangement counts together produces a total of 21 ar
 
 For each row, count all of the different arrangements of operational and broken springs that meet the given criteria. What is the sum of those counts? */
 
-const TEST_CONDITION_RECORDS: { row: string; arrangements: number }[] = [
-  { row: "???.### 1,1,3", arrangements: 1 },
-  { row: ".??..??...?##. 1,1,3", arrangements: 4 },
-  { row: "?#?#?#?#?#?#?#? 1,3,1,6", arrangements: 1 },
-  { row: "????.#...#... 4,1,1", arrangements: 1 },
-  { row: "????.######..#####. 1,6,5", arrangements: 4 },
-  { row: "?###???????? 3,2,1", arrangements: 10 },
+const TEST_CONDITION_RECORDS: {
+  row: string;
+  arrangements: number;
+  arrangements2: number;
+}[] = [
+  { row: "???.### 1,1,3", arrangements: 1, arrangements2: 1 },
+  { row: ".??..??...?##. 1,1,3", arrangements: 4, arrangements2: 16384 },
+  { row: "?#?#?#?#?#?#?#? 1,3,1,6", arrangements: 1, arrangements2: 1 },
+  { row: "????.#...#... 4,1,1", arrangements: 1, arrangements2: 16 },
+  { row: "????.######..#####. 1,6,5", arrangements: 4, arrangements2: 2500 },
+  { row: "?###???????? 3,2,1", arrangements: 10, arrangements2: 506250 },
 ];
 
-function countArrangements(rawRow: string): number {
+// We'll memoize calculations by keeping number of arrangements for a given row string and
+// list of group sizes recorded. So the cache will look like:
+// {
+//   "???.###": { "1,1,3": 1, "1,3": 4 },
+//   "?#.?": {"1": 1, "2,1": 1}
+// }
+const CACHE: Record<string, Record<string, number>> = {};
+// More for debugging/understanding purposes, really. Count the number of cache hits.
+let cacheHits = 0;
+
+// Helper function which checks if a result for a given set of input substring + group
+// sizes is present in the cache.
+function readCache(
+  subString: string,
+  groupSizes: number[]
+): number | undefined {
+  const subStringCache = CACHE[subString];
+  if (!subStringCache) {
+    return undefined;
+  }
+  const groupKey = groupSizes.length ? groupSizes.join(",") : "NO_GROUPS";
+  return subStringCache[groupKey];
+}
+
+// Helper function which takes a given result and the input substring + group sizes that
+// lead to it and caches that result.
+function writeCache(
+  result: number,
+  subString: string,
+  groupSizes: number[]
+): void {
+  CACHE[subString] = CACHE[subString] || {};
+  const groupKey = groupSizes.length ? groupSizes.join(",") : "NO_GROUPS";
+  CACHE[subString]![groupKey] = result;
+}
+
+function countArrangements(rawRow: string, folds: number = 1): number {
   // Start by parsing the row to separate the damaged condition records from the list of
   // damaged group sizes.
-  const [row, rawGroupSizes] = rawRow.split(/\s+/);
+  let [row, rawGroupSizes] = rawRow.split(/\s+/);
   if (!row || !rawGroupSizes) {
     throw new Error(
       `could not determine row or group sizes from row: ${rawRow}`
     );
   }
   // Further parse the list of damaged group sizes into an array of numbers.
-  const groupSizes = rawGroupSizes.split(",").map((size) => parseInt(size, 10));
+  let groupSizes = rawGroupSizes.split(",").map((size) => parseInt(size, 10));
+
+  // [FOR PART 2] Optionally, unfold the row and group sizes, duplicating what's there up
+  // to `folds` times.
+  [row, groupSizes] = unfold(row, groupSizes, folds);
 
   return countArrangementsR(row, groupSizes);
 }
 
 function countArrangementsR(substring: string, gs: number[]): number {
+  // Check if we can use a cached result first.
+  const cacheValue = readCache(substring, gs);
+  if (cacheValue !== undefined) {
+    cacheHits = cacheHits + 1;
+    return cacheValue;
+  }
+
   // Make a copy of gs so we can shift elements without affecting recursive calls farther up the stack.
   const groupSizes = [...gs];
   // If there are no groups we're trying to fit into the string, the only possible
@@ -100,7 +151,9 @@ function countArrangementsR(substring: string, gs: number[]): number {
   if (!groupSizes.length) {
     // If the string still contains any damaged hot springs ("#"s), this isn't a valid
     // arrangement.
-    return substring.indexOf("#") !== -1 ? 0 : 1;
+    const arrangements = substring.indexOf("#") !== -1 ? 0 : 1;
+    writeCache(arrangements, substring, groupSizes);
+    return arrangements;
   }
 
   // Otherwise, take the next group size from the front of the array.
@@ -163,6 +216,7 @@ function countArrangementsR(substring: string, gs: number[]): number {
     canFitGroups = springIndex + requiredLength <= substring.length;
   }
 
+  writeCache(arrangements, substring, gs);
   return arrangements;
 }
 
@@ -206,4 +260,77 @@ rl.on("line", (line) => {
 
 rl.on("close", () => {
   console.log(sum);
+});
+
+/* --- Part Two ---
+As you look out at the field of springs, you feel like there are way more springs than the condition records list. When you examine the records, you discover that they were actually folded up this whole time!
+
+To unfold the records, on each row, replace the list of spring conditions with five copies of itself (separated by ?) and replace the list of contiguous groups of damaged springs with five copies of itself (separated by ,).
+
+So, this row:
+
+.# 1
+Would become:
+
+.#?.#?.#?.#?.# 1,1,1,1,1
+The first line of the above example would become:
+
+???.###????.###????.###????.###????.### 1,1,3,1,1,3,1,1,3,1,1,3,1,1,3
+In the above example, after unfolding, the number of possible arrangements for some rows is now much larger:
+
+???.### 1,1,3 - 1 arrangement
+.??..??...?##. 1,1,3 - 16384 arrangements
+?#?#?#?#?#?#?#? 1,3,1,6 - 1 arrangement
+????.#...#... 4,1,1 - 16 arrangements
+????.######..#####. 1,6,5 - 2500 arrangements
+?###???????? 3,2,1 - 506250 arrangements
+After unfolding, adding all of the possible arrangement counts together produces 525152.
+
+Unfold your condition records; what is the new sum of possible arrangement counts? */
+
+function unfold(
+  foldedRow: string,
+  foldedGroupSizes: number[],
+  folds: number
+): [row: string, groupSizes: number[]] {
+  let row: string = "";
+  let groupSizes: number[] = [];
+  let foldIndex = 0;
+  while (foldIndex < folds) {
+    // Add another copy of the folded row.
+    row = row + foldedRow;
+    // Except for the last one, also add a "?" after as a separator.
+    if (foldIndex !== folds - 1) {
+      row = row + "?";
+    }
+
+    // Add another copy of the folded group sizes.
+    groupSizes = groupSizes.concat(foldedGroupSizes);
+
+    foldIndex = foldIndex + 1;
+  }
+
+  return [row, groupSizes];
+}
+
+// Test cases
+for (const { row, arrangements2 } of TEST_CONDITION_RECORDS) {
+  const result = countArrangements(row, 5);
+  if (result !== arrangements2) {
+    console.error("❌, expected", arrangements2, "but got", result);
+  } else {
+    console.log("✅");
+  }
+}
+
+// Now try for our actual condition record
+const rl2 = readline.createInterface(fs.createReadStream("./2023/12.txt"));
+
+let sum2 = 0;
+rl2.on("line", (line) => {
+  sum2 = sum2 + countArrangements(line, 5);
+});
+
+rl2.on("close", () => {
+  console.log(sum2, cacheHits);
 });
