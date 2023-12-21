@@ -175,7 +175,6 @@ function findReflectionRows(rows: string[]): [row1: number, row2: number] {
   // First, we'll take every pair of consecutive rows and look for matches.
   let topRowIndex = 0;
   while (topRowIndex + 1 < rows.length) {
-    // console.log("checking", topRowIndex, topRowIndex + 1);
     const current = rows[topRowIndex]!;
     const current2 = rows[topRowIndex + 1]!;
     if (current === current2) {
