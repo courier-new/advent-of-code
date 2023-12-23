@@ -49,7 +49,7 @@ The total load is the sum of the load caused by all of the rounded rocks. In thi
 
 Tilt the platform so that the rounded rocks all roll north. Afterward, what is the total load on the north support beams? */
 
-function tiltNorth(col: string): string {
+function tilt(col: string, direction: "front" | "back"): string {
   // We will split the column into slices around each cube rock, which cannot move. Cubes
   // and the north-most edge represent boundaries.
   const sections: string[] = [];
@@ -84,8 +84,14 @@ function tiltNorth(col: string): string {
       tilted = tilted.concat(section);
     } else {
       // For every other section, tilting means all the round rocks slide (sort) to the
-      // front, and all the empty space ends up (sorts) at the back.
-      const sorted = section.split("").sort((a, b) => (a === "O" ? -1 : 1));
+      // front or back, depending on which direction the tilt is.
+      const sorted = section.split("").sort((a, b) => {
+        if (direction === "front") {
+          return a === "O" ? -1 : 1;
+        } else {
+          return a === "O" ? 1 : -1;
+        }
+      });
       tilted = tilted.concat(...sorted);
     }
   }
@@ -105,7 +111,7 @@ function tiltPlatform(platform: string): string[] {
   }
 
   // Then tilt each column north.
-  const tiltedCols = cols.map(tiltNorth);
+  const tiltedCols = cols.map((col) => tilt(col, "front"));
   // Then re-join them back to a single string.
   let tiltedRows: string[] = [];
   let colIndex = 0;
@@ -134,10 +140,14 @@ function calculateLoad(rows: string[]): number {
 }
 
 // Test cases
-console.log(tiltNorth(".O") === "O.");
-console.log(tiltNorth("OO.O.O..##") === "OOOO....##");
-console.log(tiltNorth("...OO#...O") === "OO...#O...");
-console.log(tiltNorth("#.#..O#.##") === "#.#O..#.##");
+console.log(tilt(".O", "front") === "O.");
+console.log(tilt(".O", "back") === ".O");
+console.log(tilt("OO.O.O..##", "front") === "OOOO....##");
+console.log(tilt("OO.O.O..##", "back") === "....OOOO##");
+console.log(tilt("...OO#...O", "front") === "OO...#O...");
+console.log(tilt("...OO#...O", "back") === "...OO#...O");
+console.log(tilt("#.#.O.#.##", "front") === "#.#O..#.##");
+console.log(tilt("#.#.O.#.##", "back") === "#.#..O#.##");
 
 const TEST_PLATFORM = `O....#....
 O.OO#....#
@@ -170,5 +180,248 @@ fs.readFile("./2023/14.txt", (err, rawFile) => {
   if (err) throw err;
 
   const tiltedRows = tiltPlatform(rawFile.toString());
-  console.log(calculateLoad(tiltedRows));
+  console.log("part 1", calculateLoad(tiltedRows));
+});
+
+/* --- Part Two ---
+The parabolic reflector dish deforms, but not in a way that focuses the beam. To do that, you'll need to move the rocks to the edges of the platform. Fortunately, a button on the side of the control panel labeled "spin cycle" attempts to do just that!
+
+Each cycle tilts the platform four times so that the rounded rocks roll north, then west, then south, then east. After each tilt, the rounded rocks roll as far as they can before the platform tilts in the next direction. After one cycle, the platform will have finished rolling the rounded rocks in those four directions in that order.
+
+Here's what happens in the example above after each of the first few cycles:
+
+After 1 cycle:
+.....#....
+....#...O#
+...OO##...
+.OO#......
+.....OOO#.
+.O#...O#.#
+....O#....
+......OOOO
+#...O###..
+#..OO#....
+
+After 2 cycles:
+.....#....
+....#...O#
+.....##...
+..O#......
+.....OOO#.
+.O#...O#.#
+....O#...O
+.......OOO
+#..OO###..
+#.OOO#...O
+
+After 3 cycles:
+.....#....
+....#...O#
+.....##...
+..O#......
+.....OOO#.
+.O#...O#.#
+....O#...O
+.......OOO
+#...O###.O
+#.OOO#...O
+This process should work if you leave it running long enough, but you're still worried about the north support beams. To make sure they'll survive for a while, you need to calculate the total load on the north support beams after 1000000000 cycles.
+
+In the above example, after 1000000000 cycles, the total load on the north support beams is 64.
+
+Run the spin cycle for 1000000000 cycles. Afterward, what is the total load on the north support beams? */
+
+function tiltNorth(col: string): string {
+  return tilt(col, "front");
+}
+
+function tiltSouth(col: string): string {
+  return tilt(col, "back");
+}
+
+function tiltWest(row: string): string {
+  return tilt(row, "front");
+}
+
+function tiltEast(row: string): string {
+  return tilt(row, "back");
+}
+
+// Helper function which runs a single cycle (tilt N, tilt W, tilt S, tilt E) on a list of
+// platform rows and returns the resultant list of rows. Input and output are stored in
+// the cycle cache.
+function spinCycle(rows: string[], cycleNumber: number): string[] {
+  // Each cycle tilts the platform four times so that the rounded rocks roll north, then
+  // west, then south, then east.
+
+  // First split the platform into cols.
+  const cols: string[] = [];
+  let rowIndex = 0;
+  while (rowIndex < rows[0]!.length) {
+    cols.push(rows.map((row) => row[rowIndex]!).join(""));
+    rowIndex = rowIndex + 1;
+  }
+
+  // Then tilt each column north.
+  let tiltedCols = cols.map(tiltNorth);
+
+  // Then put them back into rows.
+  let tiltedRows: string[] = [];
+  let colIndex = 0;
+  while (colIndex < tiltedCols[0]!.length) {
+    tiltedRows.push(tiltedCols.map((col) => col[colIndex]!).join(""));
+    colIndex = colIndex + 1;
+  }
+
+  // console.log("\nTILTED NORTH\n\n", tiltedRows.join("\n "));
+
+  // Then tilt each column west.
+  tiltedRows = tiltedRows.map(tiltWest);
+
+  // console.log("\nTILTED WEST\n\n", tiltedRows.join("\n "));
+
+  // Then put them back into columns.
+  tiltedCols = [];
+  rowIndex = 0;
+  while (rowIndex < tiltedRows[0]!.length) {
+    tiltedCols.push(tiltedRows.map((row) => row[rowIndex]!).join(""));
+    rowIndex = rowIndex + 1;
+  }
+
+  // Then tilt each column south.
+  tiltedCols = tiltedCols.map(tiltSouth);
+
+  // Then put them back into rows.
+  tiltedRows = [];
+  colIndex = 0;
+  while (colIndex < tiltedCols[0]!.length) {
+    tiltedRows.push(tiltedCols.map((col) => col[colIndex]!).join(""));
+    colIndex = colIndex + 1;
+  }
+
+  // console.log("\nTILTED SOUTH\n\n", tiltedRows.join("\n "));
+
+  // Finally, tilt each row east.
+  tiltedRows = tiltedRows.map(tiltEast);
+
+  return tiltedRows;
+}
+
+const TEST_SPIN_CYCLE_PLATFORM = `.....#....
+....#...O#
+...OO##...
+.OO#......
+.....OOO#.
+.O#...O#.#
+....O#....
+......OOOO
+#...O###..
+#..OO#....`;
+
+console.log(
+  spinCycle(TEST_PLATFORM.split(/\n/), 1).join("\n") ===
+    TEST_SPIN_CYCLE_PLATFORM
+);
+
+function runCycles(platform: string, numberOfCycles: number): string {
+  const cycleCache: Record<string, string> = {};
+
+  // We'll start by running cycles as many times as it takes to get our first cache hit.
+  let cycleNumber = 1;
+  let rows = platform.split(/\n/);
+  let cacheKey = platform;
+  while (cycleNumber <= numberOfCycles && cycleCache[cacheKey] === undefined) {
+    // Perform spin cycle.
+    rows = spinCycle(rows, cycleNumber);
+
+    // Cache our result.
+    const newPlatform = rows.join("\n");
+    cycleCache[cacheKey] = newPlatform;
+
+    // Prepare to run a new cycle on our new platform state.
+    cycleNumber = cycleNumber + 1;
+    cacheKey = newPlatform;
+  }
+
+  console.log("hit cache", cycleNumber);
+
+  // Once we find our first cache hit, record where we are. We want to look for a
+  // meta-cycle; in other words, how many additional spin cycles will it take for us to
+  // reach this platform layout again?
+  const metaCycleStart = cycleNumber;
+  // We also want to record the platform layout after each step of the meta-cycle, so that
+  // we can extrapolate out to figure out where N spin cycles would land.
+  const metaCycleStartPlatform = cycleCache[cacheKey]!;
+  const metaCycleSteps: string[] = [];
+
+  // Now keep running the spin cycles until we encounter this platform layout again.
+  while (
+    cycleNumber <= numberOfCycles &&
+    (cycleNumber === metaCycleStart ||
+      cycleCache[cacheKey] !== metaCycleStartPlatform)
+  ) {
+    // Check for a cached result to reuse.
+    const nextCacheEntry = cycleCache[cacheKey];
+    if (nextCacheEntry !== undefined) {
+      rows = nextCacheEntry.split(/\n/);
+    } else {
+      // Otherwise, just perform spin cycle again and cache the result.
+      rows = spinCycle(rows, cycleNumber);
+      // Cache our result.
+      cycleCache[cacheKey] = rows.join("\n");
+    }
+
+    cycleNumber = cycleNumber + 1;
+    cacheKey = rows.join("\n");
+    // Record the result after running this spin cycle in the meta cycle.
+    metaCycleSteps.push(cacheKey);
+  }
+
+  console.log("encountered first step again", cycleNumber);
+
+  // Once we encounter the same platform again, we know how long the meta-cycle spans.
+  const metaCycleLength = cycleNumber - metaCycleStart;
+
+  // Now count up how many total cycles are remaining.
+  const remainingCycles = numberOfCycles - cycleNumber;
+  // The remainder if we divided this into the length of our meta cycle tells us the index
+  // of the meta cycle of the platform layout we would end up on.
+  const metaCycleIndex = remainingCycles % metaCycleLength;
+
+  // For debugging; verifies that if we manually keep spin-cycling, we'll still arrive at
+  // the same conclusion.
+  // while (cycleNumber <= numberOfCycles) {
+  //   // Check for a cached result to reuse.
+  //   const nextCacheEntry = cycleCache[cacheKey];
+  //   if (nextCacheEntry !== undefined) {
+  //     if (nextCacheEntry === metaCycleStartPlatform) {
+  //       console.log("cycle", cycleNumber, "found starting entry AGAIN!");
+  //     }
+  //     rows = nextCacheEntry.split(/\n/);
+  //   } else {
+  //     // Otherwise, just perform spin cycle again and cache the result.
+  //     rows = spinCycle(rows, cycleNumber);
+  //     // Cache our result.
+  //     cycleCache[cacheKey] = rows.join("\n");
+  //   }
+
+  //   cycleNumber = cycleNumber + 1;
+  //   cacheKey = rows.join("\n");
+  // }
+
+  // if (metaCycleSteps[metaCycleIndex] !== cacheKey) {
+  //   throw new Error("DEBUGGING: brute force did not match extrapolation");
+  // }
+
+  return metaCycleSteps[metaCycleIndex]!;
+}
+
+console.log(runCycles(TEST_PLATFORM, 60));
+
+// Now try for our actual platform.
+fs.readFile("./2023/14.txt", (err, rawFile) => {
+  if (err) throw err;
+
+  const endPlatform = runCycles(rawFile.toString(), 1000000);
+  console.log("part 2", calculateLoad(endPlatform.split(/\n/)));
 });
