@@ -94,7 +94,8 @@ type Beam = {
   headingDirection: Direction;
 };
 
-function traverse(map: Tile[][], startingBeam: Beam): [map: Tile[][], number] {
+function traverse(map0: Tile[][], startingBeam: Beam): [map: Tile[][], number] {
+  const map = JSON.parse(JSON.stringify(map0));
   let totalEnergizedTiles = 0;
   // Keep a stack of all the beams we still have to follow, to track any splits, and start
   // with one beam in the initial beam.
@@ -254,12 +255,12 @@ const TEST_LAYOUT = `.|...\\....
 // 7.-.-/..|..
 // 8.|....-|.\\
 // 9..//.|....
-const map = buildTileMap(TEST_LAYOUT);
+const testMap = buildTileMap(TEST_LAYOUT);
 console.log(
-  traverse(map, { position: [0, -1], headingDirection: "e" })[1] === 46
+  traverse(testMap, { position: [0, -1], headingDirection: "e" })[1] === 46
 );
 
-// Now try for the real layout
+// Now try for the real layout.
 import * as fs from "fs";
 
 fs.readFile("./2023/16.txt", (err, rawFile) => {
@@ -269,4 +270,93 @@ fs.readFile("./2023/16.txt", (err, rawFile) => {
     "part 1 total",
     traverse(map, { position: [0, -1], headingDirection: "e" })[1]
   );
+});
+
+/* --- Part Two ---
+As you try to work out what might be wrong, the reindeer tugs on your shirt and leads you to a nearby control panel. There, a collection of buttons lets you align the contraption so that the beam enters from any edge tile and heading away from that edge. (You can choose either of two directions for the beam if it starts on a corner; for instance, if the beam starts in the bottom-right corner, it can start heading either left or upward.)
+
+So, the beam could start on any tile in the top row (heading downward), any tile in the bottom row (heading upward), any tile in the leftmost column (heading right), or any tile in the rightmost column (heading left). To produce lava, you need to find the configuration that energizes as many tiles as possible.
+
+In the above example, this can be achieved by starting the beam in the fourth tile from the left in the top row:
+
+.|<2<\....
+|v-v\^....
+.v.v.|->>>
+.v.v.v^.|.
+.v.v.v^...
+.v.v.v^..\
+.v.v/2\\..
+<-2-/vv|..
+.|<<<2-|.\
+.v//.|.v..
+Using this configuration, 51 tiles are energized:
+
+.#####....
+.#.#.#....
+.#.#.#####
+.#.#.##...
+.#.#.##...
+.#.#.##...
+.#.#####..
+########..
+.#######..
+.#...#.#..
+Find the initial beam configuration that energizes the largest number of tiles; how many tiles are energized in that configuration? */
+
+function findHighestEnergy(map: Tile[][]): number {
+  let mostTilesEnergized = 0;
+  let bestStartingBeam: Beam | undefined;
+
+  const rowIndices = new Array(map.length).fill(0).map((_, i) => i);
+  const colIndices = new Array(map[0]!.length).fill(0).map((_, i) => i);
+
+  const lrStartingPositions: Beam[] = rowIndices.flatMap<Beam>((rowIndex) => [
+    {
+      position: [rowIndex, -1],
+      headingDirection: "e",
+    },
+    {
+      position: [rowIndex, map[0]!.length],
+      headingDirection: "w",
+    },
+  ]);
+
+  const udStartingPositions: Beam[] = colIndices.flatMap<Beam>((colIndex) => [
+    {
+      position: [-1, colIndex],
+      headingDirection: "s",
+    },
+    {
+      position: [map.length, colIndex],
+      headingDirection: "n",
+    },
+  ]);
+
+  for (const beam of [...lrStartingPositions, ...udStartingPositions]) {
+    // Traverse the path of the beam and determine the number of energized tiles from this path.
+    const [_, tileCount] = traverse(map, beam);
+    // If it's better than our current best record, take this one instead.
+    if (tileCount > mostTilesEnergized) {
+      mostTilesEnergized = tileCount;
+      bestStartingBeam = beam;
+    }
+  }
+
+  return mostTilesEnergized;
+}
+
+// Test cases
+const [_, tileCount] = traverse(testMap, {
+  position: [-1, 3],
+  headingDirection: "s",
+});
+console.log(tileCount === 51);
+
+console.log(findHighestEnergy(testMap) === 51);
+
+// Now try for the real layout.
+fs.readFile("./2023/16.txt", (err, rawFile) => {
+  if (err) throw err;
+  const map = buildTileMap(rawFile.toString());
+  console.log("part 2 highest energy", findHighestEnergy(map));
 });
