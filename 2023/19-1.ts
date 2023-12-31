@@ -9,6 +9,7 @@ x: Extremely cool looking
 m: Musical (it makes a noise when you hit it)
 a: Aerodynamic
 s: Shiny
+
 Then, each part is sent through a series of workflows that will ultimately accept or reject the part. Each workflow has a name and contains a list of rules; each rule specifies a condition and where to send the part if the condition is true. The first rule that matches the part being considered is applied immediately, and the part moves on to the destination described by the rule. (The last rule in each workflow has no condition and always applies if reached.)
 
 Consider the workflow ex{x>10:one,m<20:two,a>30:R,A}. This workflow is named ex and contains four rules. If workflow ex were considering a specific part, it would perform the following steps in order:
@@ -17,6 +18,7 @@ Rule "x>10:one": If the part's x is more than 10, send the part to the workflow 
 Rule "m<20:two": Otherwise, if the part's m is less than 20, send the part to the workflow named two.
 Rule "a>30:R": Otherwise, if the part's a is more than 30, the part is immediately rejected (R).
 Rule "A": Otherwise, because no other rules matched the part, the part is immediately accepted (A).
+
 If a part is sent to another workflow, it immediately switches to the start of that workflow instead and never returns. If a part is accepted (sent to A) or rejected (sent to R), the part immediately stops any further processing.
 
 The system works, but it's not keeping up with the torrent of weird metal shapes. The Elves ask if you can help sort a few parts and give you the list of workflows and some part ratings (your puzzle input). For example:
@@ -209,6 +211,8 @@ function parsePart(line: string): Part {
   };
 }
 
+// Helper function which passes a part through each workflow as necessary until the part
+// is either accepted or rejected, and then returns the result.
 function evaluatePart(part: Part, workflows: Workflows): boolean {
   // Evaluate our first workflow.
   let result: WorkflowResult = workflows["in"]!(part);
