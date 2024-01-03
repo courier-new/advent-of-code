@@ -346,3 +346,90 @@ fs.readFile("./2023/18.txt", (err, rawFile) => {
   const interiorArea = calculateInteriorPoints(pathArea, perimeter);
   console.log("area:", perimeter + interiorArea);
 });
+
+/* --- Part Two ---
+The Elves were right to be concerned; the planned lagoon would be much too small.
+
+After a few minutes, someone realizes what happened; someone swapped the color and instruction parameters when producing the dig plan. They don't have time to fix the bug; one of them asks if you can extract the correct instructions from the hexadecimal codes.
+
+Each hexadecimal code is six hexadecimal digits long. The first five hexadecimal digits encode the distance in meters as a five-digit hexadecimal number. The last hexadecimal digit encodes the direction to dig: 0 means R, 1 means D, 2 means L, and 3 means U.
+
+So, in the above example, the hexadecimal codes can be converted into the true instructions:
+
+#70c710 = R 461937
+#0dc571 = D 56407
+#5713f0 = R 356671
+#d2c081 = D 863240
+#59c680 = R 367720
+#411b91 = D 266681
+#8ceee2 = L 577262
+#caa173 = U 829975
+#1b58a2 = L 112010
+#caa171 = D 829975
+#7807d2 = L 491645
+#a77fa3 = U 686074
+#015232 = L 5411
+#7a21e3 = U 500254
+
+Digging out this loop and its interior produces a lagoon that can hold an impressive 952408144115 cubic meters of lava.
+
+Convert the hexadecimal color codes into the correct instructions; if the Elves follow this new dig plan, how many cubic meters of lava could the lagoon hold? */
+
+function parseHexInstruction(line: string): Instruction {
+  const hex = line.match(/#([\da-z]+)/)?.[1];
+  if (!hex) {
+    throw new Error(`Could not parse hexcode from instruction: ${line}`);
+  }
+
+  // The first five hex digits encode the distance
+  const distance = parseInt(hex.slice(0, 5), 16);
+  // The final digit should be the direction.
+  let direction: Direction = "D";
+  switch (hex[5]) {
+    case "0":
+      direction = "R";
+      break;
+    case "1":
+      direction = "D";
+      break;
+    case "2":
+      direction = "L";
+      break;
+    case "3":
+      direction = "U";
+      break;
+    default:
+      throw new Error(
+        `Did not find valid digit in direction position of line: ${line}: ${hex[5]}`
+      );
+  }
+
+  return { direction, distance };
+}
+
+// Test cases for part 2.
+const testInstructions2 = TEST_DIG_PLAN.split("\n").map(parseHexInstruction);
+const [testVertices2, testPerimeter2] = tracePath(testInstructions2);
+const testPathArea2 = calculateShoelaceArea(testVertices2);
+const testInteriorPoints2 = calculateInteriorPoints(
+  testPathArea2,
+  testPerimeter2
+);
+if (testPerimeter2 + testInteriorPoints2 !== 952408144115) {
+  console.error(
+    "❌, expected result of 952408144115 but got",
+    testPerimeter2 + testInteriorPoints2
+  );
+} else {
+  console.log("✅");
+}
+
+// Now try for the actual digging plan again.
+fs.readFile("./2023/18.txt", (err, rawFile) => {
+  if (err) throw err;
+  const instructions = rawFile.toString().split("\n").map(parseHexInstruction);
+  const [vertices, perimeter] = tracePath(instructions);
+  const pathArea = calculateShoelaceArea(vertices);
+  const interiorArea = calculateInteriorPoints(pathArea, perimeter);
+  console.log("area for part 2:", perimeter + interiorArea);
+});
