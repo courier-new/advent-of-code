@@ -166,15 +166,19 @@ type Pulse = {
 
 type ModuleType = "broadcaster" | "flip-flop" | "conjunction" | "test";
 
-type TestModule = { type: "test" };
-type BroadcasterModule = { type: "broadcaster"; destinationIDs: ModuleID[] };
-type FlipFlopModule = {
+type ModuleBase = { id: ModuleID };
+type TestModule = ModuleBase & { type: "test" };
+type BroadcasterModule = ModuleBase & {
+  type: "broadcaster";
+  destinationIDs: ModuleID[];
+};
+type FlipFlopModule = ModuleBase & {
   type: "flip-flop";
   destinationIDs: ModuleID[];
   // Flip-flop modules also have an internal on/off state.
   on: boolean;
 };
-type ConjunctionModule = {
+type ConjunctionModule = ModuleBase & {
   type: "conjunction";
   destinationIDs: ModuleID[];
   // Conjunction modules remember the most recent pulses from each of their connected
@@ -182,12 +186,11 @@ type ConjunctionModule = {
   inputs: Record<ModuleID, PulseType>;
 };
 
-type Module = { id: ModuleID } & (
+type Module =
   | TestModule
   | BroadcasterModule
   | FlipFlopModule
-  | ConjunctionModule
-);
+  | ConjunctionModule;
 
 type ModuleLookup = Record<ModuleID, Module>;
 
@@ -347,7 +350,7 @@ function parseConfiguration(config: string): ModuleLookup {
   return lookup;
 }
 
-// Helper function which folhighe sequence of pulses sent as a result of pushing the
+// Helper function which follows sequence of pulses sent as a result of pushing the
 // button once. It returns the number of each type of pulse sent as well as the updated
 // state of all the modules in the lookup at the conclusion of the sequence.
 function pushButton(
@@ -527,4 +530,183 @@ fs.readFile("./2023/20.txt", (err, rawFile) => {
     // Our result is the product of these two.
     console.log("part 1 result:", lows * highs);
   }
+});
+
+/* --- Part Two ---
+The final machine responsible for moving the sand down to Island Island has a module
+attached named rx. The machine turns on when a single low pulse is sent to rx.
+
+Reset all modules to their default states. Waiting for all pulses to be fully handled
+after each button press, what is the fewest number of button presses required to deliver a
+single low pulse to the module named rx? */
+
+// After naively trying to just keep pushing the button until it eventually sent a low
+// pulse to the "rx" module and watching that take a century and a half to get anywhere, I
+// realized that the "rx" module is the destination of a conjunction module. The fact that
+// it's a conjunction module is specific to my input and is not due to a constraint stated
+// in the problem. But we can use this fact to our advantage.
+//
+// Based on how conjunction modules work, it would take until all of the conjunction
+// module's inputs have most recently sent high pulses for the conjunction module itself
+// to finally emit a low pulse to "rx". Rather than waiting around for all of those to be
+// high, then, we could use an LCM approach like we did on Day 8: solve for how many
+// button pushes it takes for each of the conjunction module's inputs to send it
+// a high pulse, and then take the LCM of each all of those.
+
+// We modify our function `pushButton` in the following way: It still follows the full
+// sequence of pulses sent as a result of pushing the button once, and it still returns
+// the updated state of all the modules in the lookup at the conclusion of the sequence.
+// However, it now takes two additional arguments: `destToWatch`, which is the ID of the
+// conjunction `Module`, and `inputsToWatch`, which is a set of IDs of the `Module`s that
+// are inputs to the conjunction module. If we process a high pulse from any of
+// `inputsToWatch` to `destToWatch`, we will also return the ID(s) of those input(s) in
+// our result tuple, so that we can record that it takes X button presses before this
+// pulse happens. Modified parts of the code have been marked with NOTE: comments.
+function pushButton2(
+  lookup: ModuleLookup,
+  destToWatch: ModuleID,
+  inputsToWatch: Set<ModuleID>
+): [newLookup: ModuleLookup, inputsHit: ModuleID[]] {
+  // We'll need a queue to keep track of the pulses we need to handle in the order that
+  // they are received. It will start with our initial low pulse from the button module to
+  // the broadcaster module.
+  const pulseQueue: Pulse[] = [
+    { sourceID: "", destinationID: "broadcaster", type: "low" },
+  ];
+  // NOTE: Also track any IDs from `inputsToWatch` that send high pulses to `destToWatch`
+  // over the course of this sequence.
+  const inputsHit = new Set<ModuleID>();
+
+  // While our queue isn't empty...
+  while (pulseQueue.length) {
+    // Take the first pulse off the front of the queue.
+    const pulse = pulseQueue.shift()!;
+    // Identify the destination module of the pulse.
+    const module = lookup[pulse.destinationID];
+    // NOTE: Check if this is a high pulse between any of our input IDs and our
+    // destination ID. If it is, record it to pass along with our return result.
+    if (
+      pulse.type === "high" &&
+      inputsToWatch.has(pulse.sourceID) &&
+      pulse.destinationID === destToWatch
+    ) {
+      inputsHit.add(pulse.sourceID);
+    }
+    // If there wasn't a module on record, this most likely isn't an error; it's actually
+    // probably just a test module that doesn't do anything.
+    if (module) {
+      // Handle the pulse.
+      const [updatedModule, pulsesEmitted] = handlePulse(module, pulse);
+      // Overwrite our module in the lookup with any updated properties.
+      lookup[module.id] = updatedModule;
+      // Add the newly emitted pulses to the back of the queue, if there are any.
+      if (pulsesEmitted.length) {
+        pulseQueue.push(...pulsesEmitted);
+      }
+    }
+  }
+
+  return [lookup, Array.from(inputsHit)];
+}
+
+// Function which takes in the module lookup table and the conjunction module whose
+// destination is "rx" and calculates how many button presses it takes until we send a low
+// pulse to "rx", based on finding the LCM of how many button presses it takes to send
+// high pulses to each of the inputs of the conjunction module, and then returns that
+// number.
+function measureUntilRX(
+  lookup: ModuleLookup,
+  conjunctionModule: ConjunctionModule
+): number {
+  // For each of the conjunction module's inputs, we want to look for how many button
+  // presses it takes to send a high pulse to the conjunction module, and remember those
+  // for our LCM calculation.
+  const pressesPerInput: Record<ModuleID, number> = {};
+  // We also want to track which inputs we haven't seen yet, so that once we've seen all
+  // of them, we can stop and perform our calculation.
+  const unseenInputIDs = new Set<ModuleID>(
+    Object.keys(conjunctionModule.inputs)
+  );
+
+  let currentLookup = { ...lookup };
+  let inputsHit: ModuleID[];
+  let pushCount = 0;
+
+  // While we still have inputs we haven't seen yet...
+  while (unseenInputIDs.size) {
+    // Increment our button pushes.
+    pushCount = pushCount + 1;
+    // Push the button.
+    [currentLookup, inputsHit] = pushButton2(
+      currentLookup,
+      conjunctionModule.id,
+      unseenInputIDs
+    );
+    // If we hit any of the inputs, record that we've seen them, and how many button
+    // presses it took for them to fire the pulse to the conjunction module.
+    for (const input of inputsHit) {
+      // Only record it if we hadn't already seen in.
+      if (unseenInputIDs.has(input)) {
+        console.log("found high pulse from", input, "in", pushCount);
+        pressesPerInput[input] = pushCount;
+        unseenInputIDs.delete(input);
+      }
+    }
+  }
+
+  // Now that we know how many presses it takes to get each input to send a high pulse to
+  // the target conjunction module, we just need to calculate the LCM of all of those
+  // amounts.
+  return computeLCM(Object.values(pressesPerInput));
+}
+
+function computeGCD(presses1: number, presses2: number): number {
+  // (Stolen from Copilot because math is hard) This is based on the principle that the
+  // GCD of two numbers also divides their difference. So, in each step, it replaces the
+  // larger number with the difference of the two numbers, which reduces the size of the
+  // numbers until reaching the GCD.
+  while (presses2 !== 0) {
+    let t = presses2;
+    presses2 = presses1 % presses2;
+    presses1 = t;
+  }
+  return presses1;
+}
+
+function computeLCM(pressCounts: number[]): number {
+  let first = pressCounts.pop()!;
+  let next = pressCounts.pop();
+  while (next !== undefined) {
+    // Pop two off and LCM them.
+    const lcm = (first * next) / computeGCD(first, next);
+    // LCM again with the next element.
+    first = lcm;
+    next = pressCounts.pop();
+  }
+  // Once we've depleted the array, whatever's left is the final LCM.
+  return first;
+}
+
+fs.readFile("./2023/20.txt", (err, rawFile) => {
+  if (err) throw err;
+  const config = rawFile.toString();
+
+  // Start by identifying the conjunction module whose destination is "rx".
+  const { id: targetConID } =
+    config.match(/\&(?<id>[a-z]+)\s+->\s+rx/)?.groups || {};
+  if (!targetConID) {
+    throw new Error(
+      `could not find any conjunction module whose destination is "rx" in config`
+    );
+  }
+  // Now parse our full lookup table for the config.
+  const lookup = parseConfiguration(config);
+  // Find the target conjunction module.
+  const con = lookup[targetConID];
+  if (con?.type !== "conjunction") {
+    throw new Error(
+      `could not find target conjunction module ${targetConID} in lookup`
+    );
+  }
+  console.log("pushes until rx:", measureUntilRX(lookup, con));
 });
