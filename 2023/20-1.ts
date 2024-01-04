@@ -550,8 +550,42 @@ single low pulse to the module named rx? */
 // module's inputs have most recently sent high pulses for the conjunction module itself
 // to finally emit a low pulse to "rx". Rather than waiting around for all of those to be
 // high, then, we could use an LCM approach like we did on Day 8: solve for how many
-// button pushes it takes for each of the conjunction module's inputs to send it
-// a high pulse, and then take the LCM of each all of those.
+// button pushes it takes for each of the conjunction module's inputs to send it a high
+// pulse, and then take the LCM of each all of those.
+//
+// NOTE: Upon further inspection, I think this only coincidentally works for our input.
+// What we really need to find is the number of button presses it takes until each of the
+// input modules *ends* with sending a high pulse to the conjunction module. Otherwise,
+// it's entirely possible that over the course of a single button press, it also sends a
+// low pulse after the high pulse, meaning it's possible that all of the inputs wouldn't
+// actually line up with highs at a given point in time mid-button-press-sequence N.
+//
+// For example, say our final conjunction module, c, has two inputs, a and b. Now say that
+// a sends a high pulse to c in 4 button presses, and b sends a high pulse to c in 6. By
+// my LCM logic, we'd conclude that c has all highs and sends its fateful low pulse to rx
+// in 12 presses. However, what if sequence 12 plays out like this:
+//
+//   1. broadcast and initial stuff
+//   2. a sends "high" to c
+//   3. c still hasn't gotten a "high" from b, so it sends a "high" to rx
+//   4. a sends "low" to c
+//   5. c sends another "high" to rx
+//   6. b sends "high" to c
+//   7. c now has a "low" for it's most recent from a, so it sends a "high" to rx
+//
+// In this sequence, despite the fact that a and b did both send high pulses to c, they
+// were out of sync with each other and didn't actually trigger c to send a low pulse to
+// rx. There's nothing stopping this from happening. The only way we can *guarantee* that
+// they both last sent high pulses to c is if we  only check at the very end of the
+// sequence.
+//
+// However, after implementing this and doing an extensive (2hr+) run, I concluded that no
+// amount of button presses *ever* ends with one of the conjunction module inputs having
+// most recently sent a high pulse. This lead me to return to my initial proposal and just
+// *assume* that if the input modules all send high pulses to the conjunction module in
+// the same button press sequence, they will be synchronized enough to trigger the
+// conjunction module's low pulse to "rx" before they send it any other low pulses...
+// Quite unsatisfying, really. :(
 
 // We modify our function `pushButton` in the following way: It still follows the full
 // sequence of pulses sent as a result of pushing the button once, and it still returns
