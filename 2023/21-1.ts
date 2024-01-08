@@ -107,7 +107,7 @@ reach in exactly 64 steps? */
 // without backtracking, then 2 steps from that without backtracking, etc. until we reach
 // 64 steps total!
 
-type Position = { row: number; column: number };
+export type Position = { row: number; column: number };
 type Direction = "N" | "S" | "E" | "W";
 
 // This function does the main work; it takes as inputs a garden map, starting position,
@@ -179,12 +179,11 @@ function move({ row, column }: Position, direction: Direction): Position {
 // reachable in `numberOfSteps` on a garden map with backtracking allowed by combining
 // together the plots reachable by non-backtracking paths of every increment of 2 up
 // to `numberOfSteps`. It returns the resultant list of all plots reachable.
-function spotsReachable(
+export function spotsReachable(
   gardenMap: string[],
   startingPos: Position,
-  numberOfSteps = 64,
-  returnArray = false
-): Position[] | number {
+  numberOfSteps = 64
+): number {
   // If `numberOfSteps` is even, we want to look for plots reachable in even numbers
   // of steps (0, 2, 4...`numberOfSteps`). If `numberOfSteps` is odd, we want to look for
   // plots reachable in odd numbers of steps (1, 3, 5...`numberOfSteps`). Thus, if
@@ -196,12 +195,12 @@ function spotsReachable(
       ? [[...gardenMap], [startingPos]]
       : spotsReachableNoBackTrack(gardenMap, startingPos, 1);
 
-  // We'll keep all reachable plots in this array. It will start with the initial set
-  // we could reach in 0 or 1 steps.
-  const allPlotsReachable: Position[] = [...initialPlotsReachable];
+  // For debugging, we'll keep all reachable plots in this array. It will start with the
+  // initial set we could reach in 0 or 1 steps.
+  // const allPlotsReachable: Position[] = [...initialPlotsReachable];
   // For performance reasons, if `returnArray` is false, we'll actually just return the
   // count of plots instead.
-  let allPlotsReachableCount: number = allPlotsReachable.length;
+  let allPlotsReachableCount: number = initialPlotsReachable.length;
 
   // We need to track how many steps away we've looked in total, since we'll only follow
   // paths up to 2 away at a time. We start with the appropriate number of steps away for
@@ -218,11 +217,8 @@ function spotsReachable(
     for (const position of lastPlotsReached) {
       let plots: Position[];
       [updatedMap, plots] = spotsReachableNoBackTrack(updatedMap, position);
-      // console.log(plots);
       // Record these plots as reachable.
-      if (returnArray) {
-        allPlotsReachable.push(...plots);
-      }
+      // allPlotsReachable.push(...plots);
       allPlotsReachableCount = allPlotsReachableCount + plots.length;
       nextPlotsReachable.push(...plots);
     }
@@ -232,7 +228,7 @@ function spotsReachable(
     lastPlotsReached = nextPlotsReachable;
   }
 
-  return returnArray ? allPlotsReachable : allPlotsReachableCount;
+  return allPlotsReachableCount;
 }
 
 const TEST_MAP = [
