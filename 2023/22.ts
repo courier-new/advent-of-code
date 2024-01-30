@@ -187,7 +187,7 @@ type BrickSupportInfo = Record<
 function playTetris(unsortedBricks: Brick[]): BrickSupportInfo {
   // Start by sorting the bricks from furthest-to-the-ground to closest-from-the-ground (z
   // starting coordinate).
-  const bricks = unsortedBricks.sort((b1, b2) => {
+  const bricks = [...unsortedBricks].sort((b1, b2) => {
     return b1.start.z < b2.start.z ? 1 : -1;
   });
 
@@ -377,4 +377,96 @@ rl.on("close", () => {
   // Count how many can be disintegrated.
   const disintegratable = countDisintegratable(brickSupportInfo);
   console.log("Part 1:", disintegratable);
+});
+
+/* --- Part Two --- Disintegrating bricks one at a time isn't going to be fast enough.
+While it might sound dangerous, what you really need is a chain reaction.
+
+You'll need to figure out the best brick to disintegrate. For each brick, determine how
+many other bricks would fall if that brick were disintegrated.
+
+Using the same example as above:
+
+- Disintegrating brick A would cause all 6 other bricks to fall.
+- Disintegrating brick F would cause only 1 other brick, G, to fall.
+
+Disintegrating any other brick would cause no other bricks to fall. So, in this example,
+the sum of the number of other bricks that would fall as a result of disintegrating each
+brick is 7.
+
+For each brick, determine how many other bricks would fall if that brick were
+disintegrated. What is the sum of the number of other bricks that would fall? */
+
+function countBricksThatWouldFall(
+  brickSupportInfo0: BrickSupportInfo,
+  brickToRemove: BrickIndex
+): number {
+  // Make a deep copy of the brick support info so that we're able to modify support info
+  // as we remove bricks and follow the chain reaction. Grump grump JS deep clone grump.
+  const brickSupportInfo: BrickSupportInfo = {};
+  for (const index in brickSupportInfo0) {
+    brickSupportInfo[index] = {
+      supportedBy: brickSupportInfo0[index]!.supportedBy,
+      supports: [...brickSupportInfo0[index]!.supports],
+    };
+  }
+
+  let numberThatWouldFall = 0;
+  // We'll form a stack of bricks that would lose a support by removing `brickToRemove`.
+  // We'll need to check each of these bricks to follow the effect of any chain reaction.
+  // The initial bricks affected are those that `brickToRemove` supported.
+  const brickStack: BrickIndex[] = brickSupportInfo[brickToRemove]!.supports;
+
+  // While the stack is not empty
+  while (brickStack.length) {
+    const nextBrick = brickStack.pop()!;
+    // This brick has had one support removed. Decrement the number it is supported by in
+    // the brick support info.
+    brickSupportInfo[nextBrick]!.supportedBy--;
+    if (brickSupportInfo[nextBrick]!.supportedBy === 0) {
+      numberThatWouldFall = numberThatWouldFall + 1;
+      // If the brick is no longer supported, it would also fall! Now we chain react to
+      // all of the bricks that it supports.
+      const { supports } = brickSupportInfo[nextBrick]!;
+      brickStack.push(...supports);
+    }
+  }
+
+  return numberThatWouldFall;
+}
+
+const TEST_NUMBER_THAT_WOULD_FALL = [6, 0, 0, 0, 0, 1, 0];
+
+const testSupportInfo = playTetris(testInitialBricks);
+for (const testBrick of testInitialBricks) {
+  const numberThatWouldFall = countBricksThatWouldFall(
+    testSupportInfo,
+    testBrick.index
+  );
+  if (numberThatWouldFall !== TEST_NUMBER_THAT_WOULD_FALL[testBrick.index]) {
+    console.error(
+      "❌, expected",
+      TEST_NUMBER_THAT_WOULD_FALL[testBrick.index],
+      "to fall but got",
+      numberThatWouldFall,
+      "for brick",
+      testBrick.index
+    );
+  } else {
+    console.log("✅");
+  }
+}
+
+rl.on("close", () => {
+  // Play tetris with the bricks.
+  const brickSupportInfo = playTetris(inputBricks);
+  let totalSum = 0;
+  for (const brick of inputBricks) {
+    const numberThatWouldFall = countBricksThatWouldFall(
+      brickSupportInfo,
+      brick.index
+    );
+    totalSum = totalSum + numberThatWouldFall;
+  }
+  console.log("Part 2:", totalSum);
 });
