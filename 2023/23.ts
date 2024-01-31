@@ -79,41 +79,6 @@ This hike contains 94 steps. (The other possible hikes you could have taken were
 Find the longest hike you can take through the hiking trails listed on your map. How many
 steps long is the longest hike? */
 
-const TEST_HIKES: { map: string; longestPath: number }[] = [
-  {
-    map: `##.###
-##.>.#
-####.#`,
-    longestPath: 4,
-  },
-  {
-    map: `#.#####################
-#.......#########...###
-#######.#########.#.###
-###.....#.>.>.###.#.###
-###v#####.#v#.###.#.###
-###.>...#.#.#.....#...#
-###v###.#.#.#########.#
-###...#.#.#.......#...#
-#####.#.#.#######.#.###
-#.....#.#.#.......#...#
-#.#####.#.#.#########v#
-#.#...#...#...###...>.#
-#.#.#v#######v###.###v#
-#...#.>.#...>.>.#.###.#
-#####v#.#.###v#.#.###.#
-#.....#...#...#.#.#...#
-#.#########.###.#.#.###
-#...###...#...#...#.###
-###.###.#.###v#####v###
-#...#...#.#.>.>.#.>.###
-#.###.###.#.###.#.#v###
-#.....###...###...#...#
-#####################.#`,
-    longestPath: 94,
-  },
-];
-
 // One thing we notice both about the example input and our personal input is that the
 // path is pretty much always 1 wide, more like a sparse maze than like a bunch of
 // spaghetti semi-overlapping paths. There are very few branching points. This means that
@@ -125,7 +90,12 @@ const TEST_HIKES: { map: string; longestPath: number }[] = [
 
 type Position = [row: number, column: number];
 
-function findLongestHike(map: string): number {
+function findLongestHike(
+  map: string,
+  // Only relevant for part 2, where we can climb slopes and ignore the directional
+  // constraint imposed in part 1.
+  slopesRestrictMovement = true
+): number {
   // We'll start by splitting the map into rows.
   const grid = map.split("\n");
 
@@ -139,18 +109,23 @@ function findLongestHike(map: string): number {
   vertices = [start, ...vertices, end];
 
   // Now we can build the graph of contracted edges between vertices.
-  const graph = buildGraph(grid, vertices);
+  const graph = buildGraph(grid, vertices, slopesRestrictMovement);
 
   // Now we can perform DFS to find the longest path through the graph from the start to
   // the end.
   return dfs(graph, start, end);
 }
 
-const SLOPES: Record<string, [dr: number, dc: number]> = {
-  "^": [-1, 0],
-  ">": [0, 1],
-  v: [1, 0],
-  "<": [0, -1],
+const UP = [-1, 0] as const;
+const RIGHT = [0, 1] as const;
+const DOWN = [1, 0] as const;
+const LEFT = [0, -1] as const;
+
+const SLOPES: Record<string, readonly [dr: number, dc: number]> = {
+  "^": UP,
+  ">": RIGHT,
+  v: DOWN,
+  "<": LEFT,
 };
 
 // Helper function which scans each tile in the grid and returns a list of all of the
@@ -171,7 +146,7 @@ function findVertices(grid: string[]): Position[] {
         // four cardinal directions up to 1 away for non-forest (#) tiles. If we find more
         // than two, then this is a vertex. If we find only 2, it's only possible to move
         // forwards or backwards, so we don't need to represent that node as a vertex.
-        const numNeighbors: number = Object.values(SLOPES).filter(
+        const numNeighbors: number = [UP, DOWN, LEFT, RIGHT].filter(
           ([dr, dc]) => {
             const r = rowIndex + dr;
             const c = colIndex + dc;
@@ -213,7 +188,10 @@ type Edge = {
 // between them.
 function buildGraph(
   grid: string[],
-  vertices: Position[]
+  vertices: Position[],
+  // Only relevant for part 2, where we can climb slopes and ignore the directional
+  // constraint imposed in part 1.
+  slopesRestrictMovement = true
 ): Record<PositionString, Edge[]> {
   const graph: Record<PositionString, Edge[]> = {};
 
@@ -247,8 +225,10 @@ function buildGraph(
       // If it's a slope, we can only move in the direction of the slope. Otherwise, we
       // can move in any direction.
       const char = grid[row]![col]!;
-      const directions: [dr: number, dc: number][] =
-        char in SLOPES ? [SLOPES[char]!] : Object.values(SLOPES);
+      const directions: (readonly [dr: number, dc: number])[] =
+        slopesRestrictMovement && char in SLOPES
+          ? [SLOPES[char]!]
+          : Object.values(SLOPES);
 
       // Check each valid direction for a path.
       for (const [dr, dc] of directions) {
@@ -329,6 +309,47 @@ function dfs(
   return maxDistance;
 }
 
+const TEST_HIKES: {
+  map: string;
+  longestPath: number;
+  longestPathPart2: number;
+}[] = [
+  {
+    map: `##.###
+##.>.#
+####.#`,
+    longestPath: 4,
+    longestPathPart2: 4,
+  },
+  {
+    map: `#.#####################
+#.......#########...###
+#######.#########.#.###
+###.....#.>.>.###.#.###
+###v#####.#v#.###.#.###
+###.>...#.#.#.....#...#
+###v###.#.#.#########.#
+###...#.#.#.......#...#
+#####.#.#.#######.#.###
+#.....#.#.#.......#...#
+#.#####.#.#.#########v#
+#.#...#...#...###...>.#
+#.#.#v#######v###.###v#
+#...#.>.#...>.>.#.###.#
+#####v#.#.###v#.#.###.#
+#.....#...#...#.#.#...#
+#.#########.###.#.#.###
+#...###...#...#...#.###
+###.###.#.###v#####v###
+#...#...#.#.>.>.#.>.###
+#.###.###.#.###.#.#v###
+#.....###...###...#...#
+#####################.#`,
+    longestPath: 94,
+    longestPathPart2: 154,
+  },
+];
+
 // Test cases
 for (const { map, longestPath } of TEST_HIKES) {
   const result = findLongestHike(map);
@@ -344,3 +365,58 @@ const inputFile = Bun.file("./2023/23.txt");
 const input = await inputFile.text();
 const result = findLongestHike(input);
 console.log("Part 1:", result);
+
+/* --- Part Two ---
+As you reach the trailhead, you realize that the ground isn't as slippery as you expected;
+you'll have no problem climbing up the steep slopes.
+
+Now, treat all slopes as if they were normal paths (.). You still want to make sure you
+have the most scenic hike possible, so continue to ensure that you never step onto the
+same tile twice. What is the longest hike you can take?
+
+In the example above, this increases the longest hike to 154 steps:
+
+#S#####################
+#OOOOOOO#########OOO###
+#######O#########O#O###
+###OOOOO#.>OOO###O#O###
+###O#####.#O#O###O#O###
+###O>...#.#O#OOOOO#OOO#
+###O###.#.#O#########O#
+###OOO#.#.#OOOOOOO#OOO#
+#####O#.#.#######O#O###
+#OOOOO#.#.#OOOOOOO#OOO#
+#O#####.#.#O#########O#
+#O#OOO#...#OOO###...>O#
+#O#O#O#######O###.###O#
+#OOO#O>.#...>O>.#.###O#
+#####O#.#.###O#.#.###O#
+#OOOOO#...#OOO#.#.#OOO#
+#O#########O###.#.#O###
+#OOO###OOO#OOO#...#O###
+###O###O#O###O#####O###
+#OOO#OOO#O#OOO>.#.>O###
+#O###O###O#O###.#.#O###
+#OOOOO###OOO###...#OOO#
+#####################O#
+
+Find the longest hike you can take through the surprisingly dry hiking trails listed on
+your map. How many steps long is the longest hike? */
+
+// The only thing part 2 changes is that slopes no longer restrict movement. We modify the
+// one part of our code that builds the graph and normally restricts movement to only
+// allow movement in the direction of the slope if we're on a slope and repeat with
+// minimal changes!
+
+// Test cases
+for (const { map, longestPathPart2 } of TEST_HIKES) {
+  const result = findLongestHike(map, false);
+  if (result !== longestPathPart2) {
+    console.error("❌, expected", longestPathPart2, "but got", result);
+  } else {
+    console.log("✅");
+  }
+}
+
+const result2 = findLongestHike(input, false);
+console.log("Part 2:", result2);
