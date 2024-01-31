@@ -1,6 +1,7 @@
 {
   "name": "advent-of-code",
   "devDependencies": {
+    "@types/bun": "^1.0.4",
     "@types/node": "^20.10.4"
   },
   "dependencies": {
