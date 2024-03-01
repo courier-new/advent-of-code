@@ -25,13 +25,13 @@ Happy coding! 🎉
 Though I had participated in Advent of Code a couple years in the past, I never did more
 than a couple days' puzzles and I never saved any of my code. 😓 In 2023, I suddenly had a
 lot more time on my hands and decided it was the perfect opportunity to pursue Advent of
-Code again and seriously try to complete the full set of puzzles. Though I'm still
-completing the last couple, I'm so proud of myself for sticking with it, and I can't wait
-to add on to this repository in the years to come!
+Code again and seriously try to complete the full set of puzzles. I didn't finish by
+December 25th, but I'm so proud of myself for sticking with it through completion, and I
+can't wait to add on to this repository in the years to come!
 
 | Year | ⭐ | Completed On |
 |:----:|:--:| ------------ |
-| [2023](./2023) | 42/50 | |
+| [2023](./2023) | 50/50 | Feb 29, 2024 |
 
 ## License
 
