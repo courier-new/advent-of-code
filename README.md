@@ -1,24 +1,8 @@
 # Advent of Code
 
-Here you'll find my solutions to the [Advent of Code](https://adventofcode.com/) puzzles,
-written in TypeScript! 💙
-
-As per the site guidelines, none of my personal puzzle inputs are included. If you want to
-run the code yourself, you'll need to create an account and download your own inputs.
-Stick any input file alongside its corresponding puzzle solution code and name it
-`{day}.txt` and you're good to go!
-
-This repository is set up to use [bun](https://bun.sh/), particularly due to the advantage
-that it can run TypeScript code directly without any additional dependencies or
-compilation steps.
-
-To run the code for a particular day, you can use the following command from the project root:
-
-```sh
-bun {year}/{day}.ts
-```
-
-Happy coding! 🎉
+Here you'll find my solutions to the [Advent of Code](https://adventofcode.com/)
+puzzles. As per the site guidelines, none of my personal puzzle inputs are
+included.
 
 ## Progress
 
@@ -32,6 +16,38 @@ can't wait to add on to this repository in the years to come!
 | Year | ⭐ | Completed On |
 |:----:|:--:| ------------ |
 | [2023](./2023) | 50/50 | Feb 29, 2024 |
+
+## Running the Code
+
+For different years, I have used different tools!
+
+### 2023: TypeScript
+
+My most fluent and first choice language! 💙 2023 is set up to use
+[bun](https://bun.sh/), particularly due to the advantage that it can run
+TypeScript code directly without any additional dependencies or compilation
+steps.
+
+To run the code for a particular day, you can use the following command from the
+2023 directory root:
+
+```sh
+bun {day}.ts
+```
+
+### 2024: Python
+
+I decided to use Python in 2024 as a bit of a refresher, since I found myself
+using it in a professional context again. 🐍 2024 is set up to use
+[poetry](https://python-poetry.org/), which is a fantastic tool for managing
+Python dependencies and virtual environments.
+
+To run the code for a particular day, you can use the following command from the
+2024 directory root:
+
+```sh
+poetry run python {day}/main.py
+```
 
 ## License
 
