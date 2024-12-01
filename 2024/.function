@@ -1,0 +1,78 @@
+REPO_ROOT=$(git rev-parse --show-toplevel)
+source $REPO_ROOT/2024/.env
+
+alias aoc='ADVENT_OF_CODE_SESSION=$SESSION aoc'
+
+function leaderboard() {
+  aoc private-leaderboard $LEADERBOARD_ID
+}
+
+function read_day() {
+  # If no argument is provided, read the input for today's day.
+  if [ -z "$1" ]; then
+    aoc read
+    return
+  fi
+
+  aoc read --day=$1
+}
+
+function download_day() {
+  # If no argument is provided, initialize the directory for today's day (in
+  # EST).
+  day=$1
+  if [ -z "$day" ]; then
+    day=$(TZ=America/New_York date +%-d)
+  fi
+
+  echo "Downloading inputs for day $day"
+
+  # If we're not in that day's directory, make sure to save the inputs there.
+  input_file=$day/input.txt
+  puzzle_file=$day/puzzle.md
+
+  # Pass any other flags along to the aoc command.
+  aoc download --day=$day --input-file=$input_file --puzzle-file=$puzzle_file --overwrite $@
+}
+
+function init_day() {
+  # If no argument is provided, initialize the directory for today's day (in
+  # EST)
+  day=$1
+  if [ -z "$day" ]; then
+    day=$(TZ=America/New_York date +%-d)
+  fi
+
+  echo "Initializing day $day"
+
+  # If the directory already exists, prompt if we should overwrite it.
+  if [ -d "$day" ]; then
+    echo -n "Directory $day already exists. Overwrite? [y/N] "
+    read -r REPLY
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      return
+    fi
+    rm -rf $day
+  fi
+
+  echo "Creating directory $day"
+  mkdir -p $day
+  cd $day
+  echo "Creating files"
+  touch main.py
+  touch test.txt
+  download_day $day
+}
+
+function submit_day() {
+  # If no argument is provided, initialize the directory for today's day (in
+  # EST)
+  day=$1
+  if [ -z "$day" ]; then
+    day=$(TZ=America/New_York date +%-d)
+  fi
+
+  echo "Submitting day $day"
+
+  aoc submit --day=$day $@
+}
