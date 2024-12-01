@@ -1,5 +1,5 @@
 {
-  "name": "advent-of-code",
+  "name": "advent-of-code-2023",
   "devDependencies": {
     "@types/bun": "^1.0.4",
     "@types/node": "^20.10.4"
