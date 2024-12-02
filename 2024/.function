@@ -27,12 +27,10 @@ function download_day() {
 
   echo "Downloading inputs for day $day"
 
-  # If we're not in that day's directory, make sure to save the inputs there.
-  input_file=$day/input.txt
-  puzzle_file=$day/puzzle.md
+  input_file=input.txt
+  puzzle_file=puzzle.md
 
-  # Pass any other flags along to the aoc command.
-  aoc download --day=$day --input-file=$input_file --puzzle-file=$puzzle_file --overwrite $@
+  aoc download --day=$day --input-file=$input_file --puzzle-file=$puzzle_file --overwrite
 }
 
 function init_day() {
@@ -65,13 +63,7 @@ function init_day() {
 }
 
 function submit_day() {
-  # If no argument is provided, initialize the directory for today's day (in
-  # EST)
-  day=$1
-  if [ -z "$day" ]; then
-    day=$(TZ=America/New_York date +%-d)
-  fi
-
+  day=$(TZ=America/New_York date +%-d)
   echo "Submitting day $day"
 
   aoc submit --day=$day $@
