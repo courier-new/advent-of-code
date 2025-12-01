@@ -3,3 +3,4 @@ input.txt
 node_modules
 .excalidraw
 .env
+__pycache__
